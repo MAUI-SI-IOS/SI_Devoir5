@@ -6,6 +6,7 @@ namespace SI_Devoir5.State
 {
     public interface IPaymentState
     {
-        void ChangeState(Payment payment);
+        void ProcessPay(Payment payment);
+        string GenerateNotificationMessage(Payment payment);
     }
 }

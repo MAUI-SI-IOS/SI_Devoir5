@@ -10,7 +10,18 @@ namespace SI_Devoir5
 {
     public class Payment
     {
-        public IPaymentState state = PendingState.Instance();
+        private IPaymentState _state = PendingState.Instance(); 
+        public IPaymentState state
+        {
+            get => _state; 
+            set
+            {
+                Debug.Assert(value != null, "State cannot be null");
+                _state = value;
+                notifyObservers(_state.GenerateNotificationMessage(this));
+            }
+
+        }
         public IPaymentStrategy? strategy;
         public readonly List<IObserver> observers = new List<IObserver>();
         public decimal Amount { get; private set; }
@@ -33,19 +44,7 @@ namespace SI_Devoir5
         {
             Debug.Assert(state != null, "State cannot be null");
 
-            state.ChangeState(this);
-
-            Debug.Assert(strategy != null, "Strategy cannot be null");
-
-            if (state is CompleteState)
-            {
-                var bill = strategy.Pay(Amount);
-                NotifyObservers(bill);
-            }
-            else if (state is FailureState)
-            {
-                NotifyObservers("Payment of " + Amount + " failed.");
-            }
+            state.ProcessPay(this);
         }
 
         public void Attach(IObserver observer)
@@ -55,12 +54,12 @@ namespace SI_Devoir5
             observers.Add(observer);
         }
 
-        private void NotifyObservers(string bill)
+        private void notifyObservers(string message)
         {
             Debug.Assert(observers != null, "Observers cannot be null");
 
             foreach (var observer in observers)
-                observer.Notify(bill);
+                observer.Notify(message);
         }
     }
 }

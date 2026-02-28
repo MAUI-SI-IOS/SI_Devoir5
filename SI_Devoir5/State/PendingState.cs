@@ -10,13 +10,14 @@ namespace SI_Devoir5.State
     {
         private PendingState() { }
         private static void println(string message) => Console.WriteLine(message);
+        private static void print(string message) => Console.Write(message);
         private static PendingState instance { get; } = new PendingState();
         public static PendingState Instance() => instance;
-        public void ChangeState(Payment payment)
+        public void ProcessPay(Payment payment)
         {
             Debug.Assert(payment != null, "Payment cannot be null");
 
-            println("Payment is pending, Should we begin the transaction? (Y/n): ");
+            print("Payment is pending, Should we begin the transaction? (Y/n): ");
             var confirmation = Console.ReadLine();
 
 
@@ -31,44 +32,40 @@ namespace SI_Devoir5.State
                     println("1. Credit Card");
                     println("2. PayPal");
                     println("3. Crypto Currency");
+                    print("Enter the number corresponding to your choice (1-3) : ");
                     var methodInput = Console.ReadLine();
 
-                    switch (methodInput)
+                    strategy = methodInput switch
                     {
-                        case "1":
-                            strategy = new CarteCreditStrategy();
-                            break;
-                        case "2":
-                            strategy = new PayPalStrategy();
-                            break;
-                        case "3":
-                            strategy = new CryptoCurencyStrategy();
-                            break;
-                        default:
-                            println("Invalid selection, please try again.");
-                            break;
-                    }
+                        "1" => new CarteCreditStrategy(),
+                        "2" => new PayPalStrategy(),
+                        "3" => new CryptoCurencyStrategy(),
+                        _ => null
+                    };
                 }
 
                 payment.SetStrategy(strategy);
+
                 println("Processing payment...");
                 var rdm = Random.Shared.Next(0, 2);
-                if (rdm == 0)
-                {
-                    println("Payment successful!");
-                    payment.state = CompleteState.Instance();
-                }
-                else
-                {
-                    println("Payment failed. Please try again.");
-                    payment.state = FailureState.Instance();
-                }
 
+                payment.state = (rdm == 0) ? 
+                    CompleteState.Instance() : 
+                    FailureState.Instance();
             }
             else
             {
                 Console.WriteLine("Payment remains pending.");
             }
+        }
+
+        public string GenerateNotificationMessage(Payment payment)
+        {
+            Debug.Assert(payment != null, "Payment cannot be null here");
+            Debug.Assert(payment.strategy != null, "Payment strategy should not be null when generating notification message");
+
+            var amount = payment.Amount;
+            return payment.strategy.Pay(amount);
         }
     }
 }
